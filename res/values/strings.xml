@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">QFixDemo</string>
+    <string name="action_settings">Settings</string>
+    
+    <string name="exit_message">退出</string>
+    <string name="show_message">显示结果</string>
+    
+    <string name="patchA_title">补丁A</string>
+    <string name="patchB_title">补丁B</string>
+    
+
+</resources>

@@ -1,0 +1,3 @@
+set solib-search-path E:/QFixDemo/obj/local/armeabi
+source D:/SoftwareInstall/android-ndk-r10d/prebuilt/common/gdb/common.setup
+directory D:/SoftwareInstall/android-ndk-r10d/platforms/android-19/arch-arm/usr/include E:/QFixDemo/jni D:/SoftwareInstall/android-ndk-r10d/sources/cxx-stl/system

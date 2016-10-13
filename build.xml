@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="QFixDemo" default="release">
+
+	<!-- ANT环境变量 -->  
+    <property environment="env" />  
+    <!-- 应用名称 -->  
+    <property name="appName" value="${ant.project.name}"/>
+     
+    <property name="sdk-folder" value="${env.ANDROID_HOME}" />
+    
+    <!-- SDK中tools目录     -->
+    <property name="sdk-tools" value="${sdk-folder}/build-tools/19.1.0" />
+    
+    <property name="jdk-tools" value="${env.JAVA_HOME}/bin" />
+  
+    <!-- 使用到的命令(当前系统为windows,如果系统为linux,可将.bat文件替换成相对应的命令) -->  
+    <property name="aapt" value="${sdk-tools}/aapt" />  
+    <property name="aidl" value="${sdk-tools}/aidl" />  
+    <property name="dx" value="${sdk-tools}/dx.bat" />  
+    <property name="apkbuilder" value="${sdk-tools}/apkbuilder.bat" />  
+    <property name="jarsigner" value="${jdk-tools}/jarsigner" /> 
+    <property name="jar" value="${jdk-tools}/jar" /> 
+      
+    <property name="android-jar" value="${sdk-folder}/platforms/android-19/android.jar" />  
+     
+    <!-- 编译aidl文件所需的预处理框架文件framework.aidl -->  
+    <property name="framework-aidl" value="${sdk-folder}/platforms/android-19/framework.aidl" />  
+  
+    <!-- 生成R文件的相对目录 -->  
+    <property name="outdir-gen" value="gen" />  
+	
+    <!-- 编译后的文件放置目录 -->  
+    <property name="outdir-bin" value="bin" />
+    
+    <!-- 清单文件 -->  
+    <property name="manifest-xml" value="AndroidManifest.xml" />  
+
+    <!-- 目录及路径定义  -->  
+    <property name="resource-dir" value="res" />  
+    <property name="asset-dir" value="assets" />   
+    <property name="srcdir" value="src" />  
+    <property name="srcdir-ospath" value="${basedir}/${srcdir}" />   
+    <property name="external-lib" value="libs" />  
+    <property name="external-lib-ospath" value="${basedir}/${external-lib}" />  
+  
+    <!-- 生成class目录 -->  
+    <property name="outdir-classes" value="${outdir-bin}/mainclass" />  
+    <property name="outdir-classes-ospath" value="${basedir}/${outdir-classes}" />
+    
+    <property name="outdir-classes2" value="${outdir-bin}/secondclass" />  
+    <property name="outdir-classes-ospath2" value="${basedir}/${outdir-classes2}" />
+    
+    <property name="patch-classes-A" value="${outdir-bin}/patchclassA" />  
+    <property name="patch-classes-ospath-A" value="${basedir}/${patch-classes-A}" />
+    
+    <property name="patch-classes-B" value="${outdir-bin}/patchclassB" />  
+    <property name="patch-classes-ospath-B" value="${basedir}/${patch-classes-B}" />
+    
+    <!-- classes.dex相关变量 -->  
+    <property name="maindex-file" value="classes.dex" />  
+    <property name="maindex-path" value="${outdir-bin}/${maindex-file}" />  
+    <property name="maindex-ospath" value="${basedir}/${maindex-path}" />
+    
+    <!-- classes2.dex相关变量 -->  
+    <property name="seconddex-file" value="classes.dex" />
+    <property name="secondjar-file" value="classes2.jar" />  
+    <property name="seconddex-path" value="${outdir-bin}/seconddexclasses" />  
+    <property name="seconddex-ospath" value="${basedir}/${seconddex-path}" />
+    
+    <property name="patchdex-file-A" value="classes.dex" />
+    <property name="patchjar-file-A" value="patchA.jar" />  
+    <property name="patchdex-path-A" value="${outdir-bin}/patchA" />
+    <property name="patchdex-ospath-A" value="${basedir}/${patchdex-path-A}" />
+    
+    <property name="patchdex-file-B" value="classes.dex" />
+    <property name="patchjar-file-B" value="patchB.jar" />  
+    <property name="patchdex-path-B" value="${outdir-bin}/patchB" />
+    <property name="patchdex-ospath-B" value="${basedir}/${patchdex-path-B}" />
+  
+    <!-- 经过aapt生成的资源包文件 -->  
+    <property name="resources-package" value="${outdir-bin}/resources.ap_" />  
+    <property name="resources-package-ospath" value="${basedir}/${resources-package}" />  
+      
+    <!-- 未认证apk包 -->  
+    <property name="out-unsigned-package" value="${outdir-bin}/${appName}-unsigned.apk" />  
+    <property name="out-unsigned-package-ospath" value="${basedir}/${out-unsigned-package}" />  
+      
+    <!-- 证书文件 -->  
+    <property name="keystore-file" value="${basedir}/hotpatch.keystore" />  
+      
+    <!-- 已认证apk包 -->  
+    <property name="out-signed-package" value="${outdir-bin}/${appName}-signed.apk" />  
+    <property name="out-signed-package-ospath" value="${basedir}/${out-signed-package}" /> 
+    
+    <target name="clean">  
+        <echo>clean...</echo>  
+		<delete dir="${outdir-gen}" />
+		<delete dir="${outdir-classes-ospath}"/>
+		<delete dir="${outdir-classes-ospath2}"/>
+		<mkdir dir="${outdir-gen}" /> 
+        <mkdir dir="${outdir-classes-ospath}" />
+        <mkdir dir="${outdir-classes-ospath2}" />
+        <delete dir="${seconddex-ospath}"/>
+		<mkdir dir="${seconddex-ospath}" />
+        <delete dir="${patch-classes-ospath-A}"/>
+		<mkdir dir="${patch-classes-ospath-A}" /> 
+		<delete dir="${patchdex-ospath-A}"/>
+		<mkdir dir="${patchdex-ospath-A}" />
+		<delete dir="${patch-classes-ospath-B}"/>
+		<mkdir dir="${patch-classes-ospath-B}" /> 
+		<delete dir="${patchdex-ospath-B}"/>
+		<mkdir dir="${patchdex-ospath-B}" />
+    </target> 
+    
+	<!-- 初始化工作 -->  
+    <target name="init">  
+        <echo>Initializing all output directories...</echo>  
+		<delete dir="${outdir-gen}" />
+		<delete dir="${outdir-classes-ospath}"/>
+		<delete dir="${outdir-classes-ospath2}"/>
+		<delete dir="${seconddex-ospath}"/>
+		<mkdir dir="${outdir-gen}" /> 
+        <mkdir dir="${outdir-classes-ospath}" />
+        <mkdir dir="${outdir-classes-ospath2}" />
+		<mkdir dir="${seconddex-ospath}" />
+    </target> 
+	
+	<!-- 根据工程中的资源文件生成R.java文件  -->  
+    <target name="gen-R" depends="init">  
+        <echo>Generating R.java from the resources...</echo>
+        <exec executable="${aapt}" failonerror="true">  
+            <arg value="package" />  
+            <arg value="-f" />  
+            <arg value="-m" />  
+            <arg value="-J" />  
+            <arg value="${outdir-gen}" />  
+            <arg value="-S" />  
+            <arg value="${resource-dir}" />  
+            <arg value="-M" />  
+            <arg value="${manifest-xml}" />  
+            <arg value="-I" />  
+            <arg value="${android-jar}" />  
+        </exec>  
+    </target>
+
+	<target name="aidl" depends="gen-R">  
+        <echo>Compiling .aidl into java files...</echo>  
+        <apply executable="${aidl}" failonerror="true">  
+            <!-- 指定预处理文件 -->  
+            <arg value="-p${framework-aidl}"/>  
+            <!-- aidl声明的目录 -->  
+            <arg value="-I${srcdir}"/>  
+            <!-- 目标文件目录 -->  
+            <arg value="-o${outdir-gen}"/>  
+            <!-- 指定哪些文件需要编译 -->  
+            <fileset dir="${srcdir}">  
+                <include name="**/*.aidl"/>  
+            </fileset>  
+        </apply>  
+    </target>
+
+	<!-- 将工程中的java源文件编译成class文件 -->  
+    <target name="compile" depends="aidl">  
+        <echo>Compiling java source code...</echo>  
+        <javac debug="true" includeantruntime="false" encoding="utf-8" source="1.6" target="1.6" srcdir="." destdir="${outdir-classes}"
+            bootclasspath="${android-jar}">
+        </javac>
+    </target>
+    
+    <!-- 将.class文件进行分割  -->
+    <target name="split" depends="compile">  
+        <echo>split class file for multidex...</echo> 
+        <move todir="${outdir-classes2}/com/qfix/seconddex" file="${outdir-classes}/com/qfix/seconddex/BridgeObjectB.class" />
+        <move todir="${outdir-classes2}/com/qfix/seconddex" file="${outdir-classes}/com/qfix/seconddex/BugObjectB.class" />
+        <move todir="${outdir-classes2}" file="${outdir-classes}/Foo2.class" />
+    </target>
+	
+	<target name="dex" depends="split">
+        <echo>dex...</echo>
+        <exec executable="${dx}" failonerror="true">  
+            <arg value="--dex" /> 
+            <arg value="--output=${maindex-ospath}" />  
+            <arg path="${outdir-classes-ospath}" />
+        </exec>
+        
+        <exec executable="${dx}" failonerror="true">
+             <arg value="--dex" />
+             <arg value="--output=${seconddex-ospath}/${seconddex-file}" />
+             <arg value="${outdir-classes-ospath2}" />
+        </exec>
+        <jar destfile="${seconddex-ospath}/${secondjar-file}" basedir="${seconddex-ospath}" includes="${seconddex-file}" />
+        <copy file="${seconddex-ospath}/${secondjar-file}" tofile="${asset-dir}/${secondjar-file}" />
+        <delete file="${seconddex-ospath}/${seconddex-file}"/>
+    </target>
+
+	<!-- 将资源文件放进输出目录 -->  
+    <target name="package-res-and-assets" depends="dex">  
+        <echo>Packaging resources and assets...</echo>  
+        <exec executable="${aapt}" failonerror="true">  
+            <arg value="package" />  
+            <arg value="-f" />  
+            <arg value="-M" />  
+            <arg value="${manifest-xml}" />  
+            <arg value="-S" />  
+            <arg value="${resource-dir}" />  
+            <arg value="-A" />  
+            <arg value="${asset-dir}" />  
+            <arg value="-I" />  
+            <arg value="${android-jar}" />  
+            <arg value="-F" />  
+            <arg value="${resources-package}" />
+        </exec>  
+    </target> 
+    
+    <macrodef name="add_to_ap">
+        <attribute name="apPath" />
+        <attribute name="targetSubPath" />
+        <attribute name="targetPath" />
+        <sequential>
+            <echo>开始加入ap...</echo>
+            <echo>@{targetPath} @{targetSubPath}</echo>
+			<exec executable="${aapt}" failonerror="true" dir="@{targetPath}">
+				<arg value="a" />
+				<arg value="@{apPath}" />
+				<arg value="@{targetSubPath}" />
+			</exec>
+        </sequential>
+    </macrodef>
+    
+	<!-- 打包成未签名的apk -->  
+    <target name="package" depends="package-res-and-assets">  
+        <echo>Packaging unsigned apk for release...</echo>  
+        <java classpath="${sdk-folder}/tools/lib/sdklib.jar" classname="com.android.sdklib.build.ApkBuilderMain">
+            <arg value="${out-unsigned-package-ospath}" /> 
+            <arg value="-u" /> 
+            <arg value="-z" /> 
+            <arg value="${resources-package-ospath}" />
+            <arg value="-f" /> 
+            <arg value="${maindex-ospath}" /> 
+            <arg value="-rf" /> 
+            <arg value="${srcdir-ospath}" />
+            <arg value="-nf"/>
+            <arg value="${external-lib}" />
+        </java> 
+        <!-- <add_to_ap apPath="${out-unsigned-package-ospath}" targetPath ="${seconddex-ospath}" targetSubPath="${secondjar-file}" /> -->
+        <echo>It will need to be signed with jarsigner before being published.</echo>  
+    </target>
+	
+	<!-- 对apk进行签名 -->  
+    <target name="release" depends="package">  
+        <echo>Packaging signed apk for release...</echo>  
+        <exec executable="${jarsigner}" failonerror="true">
+            <arg value="-verbose"/> 
+            <arg value="-digestalg" />  
+            <arg value="SHA1" />
+            <arg value="-sigalg" />  
+            <arg value="MD5withRSA" />
+            <arg value="-certs"/>
+            <arg value="-keystore" />  
+            <arg value="${keystore-file}" />  
+            <arg value="-storepass" />  
+            <arg value="hotpatchkey" />  
+            <arg value="-keypass" />  
+            <arg value="hotpatchkey" />  
+            <arg value="-signedjar" />  
+            <arg value="${out-signed-package-ospath}" />  
+            <arg value="${out-unsigned-package-ospath}"/>  
+            <!-- 不要忘了证书的别名 -->  
+            <arg value="hotpatch_cert"/>  
+        </exec>  
+    </target>
+    
+    <target name="patchA">
+        <echo>patchA...</echo> 
+        <delete dir="${patch-classes-ospath-A}"/>
+		<mkdir dir="${patch-classes-ospath-A}" /> 
+		<delete dir="${patchdex-ospath-A}"/>
+		<mkdir dir="${patchdex-ospath-A}" />
+		
+        <delete dir="${outdir-classes-ospath}"/>
+		<mkdir dir="${outdir-classes-ospath}" />
+        <javac debug="true" includeantruntime="false" encoding="utf-8" source="1.6" target="1.6"
+            srcdir="${srcdir-ospath}"
+            includes="com/qfix/maindex/BugObjectA.java"
+            destdir="${outdir-classes-ospath}"
+            bootclasspath="${android-jar}">
+        </javac>
+        <copy file="${outdir-classes-ospath}/com/qfix/maindex/BugObjectA.class" tofile="${patch-classes-ospath-A}/com/qfix/maindex/BugObjectA.class" />
+        <echo>${dx}...</echo>
+        <exec executable="${dx}" failonerror="true">
+            <arg value="--dex" /> 
+            <arg value="--output=${patchdex-ospath-A}/${patchdex-file-A}" />  
+            <arg path="${patch-classes-ospath-A}" />
+        </exec> 
+        <jar destfile="${patchdex-ospath-A}/${patchjar-file-A}" basedir="${patchdex-ospath-A}" includes="${patchdex-file-A}" />
+        <copy file="${patchdex-ospath-A}/${patchjar-file-A}" tofile="${asset-dir}/${patchjar-file-A}" />
+        <delete file="${patchdex-ospath-A}/${patchdex-file-A}"/>
+        
+        <delete dir="${outdir-classes-ospath}"/>
+    </target>
+    
+    <target name="patchB">
+        <echo>patchB...</echo> 
+		<delete dir="${patch-classes-ospath-B}"/>
+		<mkdir dir="${patch-classes-ospath-B}" /> 
+		<delete dir="${patchdex-ospath-B}"/>
+		<mkdir dir="${patchdex-ospath-B}" />
+        
+        <delete dir="${outdir-classes-ospath}"/>
+		<mkdir dir="${outdir-classes-ospath}" />
+        <javac debug="true" includeantruntime="false" encoding="utf-8" source="1.6" target="1.6"
+            srcdir="${srcdir-ospath}"
+            includes="com/qfix/seconddex/BugObjectB.java"
+            destdir="${outdir-classes-ospath}"
+            bootclasspath="${android-jar}">
+        </javac>
+        <copy file="${outdir-classes-ospath}/com/qfix/seconddex/BugObjectB.class" tofile="${patch-classes-ospath-B}/com/qfix/seconddex/BugObjectB.class" />
+        <echo>${dx}...</echo>
+        <exec executable="${dx}" failonerror="true">
+            <arg value="--dex" /> 
+            <arg value="--output=${patchdex-ospath-B}/${patchdex-file-B}" />  
+            <arg path="${patch-classes-ospath-B}" />
+        </exec> 
+        <jar destfile="${patchdex-ospath-B}/${patchjar-file-B}" basedir="${patchdex-ospath-B}" includes="${patchdex-file-B}" />
+        <copy file="${patchdex-ospath-B}/${patchjar-file-B}" tofile="${asset-dir}/${patchjar-file-B}" />
+        <delete file="${patchdex-ospath-B}/${patchdex-file-B}"/>
+        
+        <delete dir="${outdir-classes-ospath}"/>
+    </target>
+    
+    <target name="patch">
+        <echo>patch...</echo> 
+        <delete dir="${patch-classes-ospath-A}"/>
+		<mkdir dir="${patch-classes-ospath-A}" /> 
+		<delete dir="${patchdex-ospath-A}"/>
+		<mkdir dir="${patchdex-ospath-A}" />
+		<delete dir="${patch-classes-ospath-B}"/>
+		<mkdir dir="${patch-classes-ospath-B}" /> 
+		<delete dir="${patchdex-ospath-B}"/>
+		<mkdir dir="${patchdex-ospath-B}" />
+		
+        <delete dir="${outdir-classes-ospath}"/>
+		<mkdir dir="${outdir-classes-ospath}" />
+        <javac debug="true" includeantruntime="false" encoding="utf-8" source="1.6" target="1.6"
+            srcdir="${srcdir-ospath}"
+            includes="com/qfix/maindex/BugObjectA.java"
+            destdir="${outdir-classes-ospath}"
+            bootclasspath="${android-jar}">
+        </javac>
+        <copy file="${outdir-classes-ospath}/com/qfix/maindex/BugObjectA.class" tofile="${patch-classes-ospath-A}/com/qfix/maindex/BugObjectA.class" />
+        <echo>${dx}...</echo>
+        <exec executable="${dx}" failonerror="true">
+            <arg value="--dex" /> 
+            <arg value="--output=${patchdex-ospath-A}/${patchdex-file-A}" />  
+            <arg path="${patch-classes-ospath-A}" />
+        </exec> 
+        <jar destfile="${patchdex-ospath-A}/${patchjar-file-A}" basedir="${patchdex-ospath-A}" includes="${patchdex-file-A}" />
+        <copy file="${patchdex-ospath-A}/${patchjar-file-A}" tofile="${asset-dir}/${patchjar-file-A}" />
+        <delete file="${patchdex-ospath-A}/${patchdex-file-A}"/>
+        
+        <delete dir="${outdir-classes-ospath}"/>
+		<mkdir dir="${outdir-classes-ospath}" />
+        <javac debug="true" includeantruntime="false" encoding="utf-8" source="1.6" target="1.6"
+            srcdir="${srcdir-ospath}"
+            includes="com/qfix/seconddex/BugObjectB.java"
+            destdir="${outdir-classes-ospath}"
+            bootclasspath="${android-jar}">
+        </javac>
+        <copy file="${outdir-classes-ospath}/com/qfix/seconddex/BugObjectB.class" tofile="${patch-classes-ospath-B}/com/qfix/seconddex/BugObjectB.class" />
+        <echo>${dx}...</echo>
+        <exec executable="${dx}" failonerror="true">
+            <arg value="--dex" /> 
+            <arg value="--output=${patchdex-ospath-B}/${patchdex-file-B}" />  
+            <arg path="${patch-classes-ospath-B}" />
+        </exec> 
+        <jar destfile="${patchdex-ospath-B}/${patchjar-file-B}" basedir="${patchdex-ospath-B}" includes="${patchdex-file-B}" />
+        <copy file="${patchdex-ospath-B}/${patchjar-file-B}" tofile="${asset-dir}/${patchjar-file-B}" />
+        <delete file="${patchdex-ospath-B}/${patchdex-file-B}"/>
+
+        <delete dir="${outdir-classes-ospath}"/>
+    </target>
+
+    <target name="install">
+        <echo>Install APK...</echo>
+
+        <exec executable="adb" failonerror="true">
+            <arg value="install" />
+            <arg value="-r" />
+            <arg value="${out-signed-package-ospath}" />
+        </exec>
+    </target>
+
+    <target name="uninstall">
+        <echo>uninstall APK..</echo>
+        <exec executable="adb" failonerror="true">
+            <arg value="uninstall" />
+            <arg value="com.qfix.maindex" />
+        </exec>
+    </target>
+	
+</project>
